@@ -3,8 +3,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-const GIST_ID = 'cf2bff0d9e33c2f9112c1e62fe18b5ee';
-const PORT = 4999;
+const { GIST_ID, DASHBOARD_PORT } = require('./src/constants');
+const PORT = DASHBOARD_PORT;
 
 // Register static files
 fastify.register(require('@fastify/static'), {

@@ -2,8 +2,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const GIST_ID = 'cf2bff0d9e33c2f9112c1e62fe18b5ee';
-const PORT_RANGE = [4000, 4999];
+const { GIST_ID, PORT_RANGE } = require('./constants');
 
 /**
  * Gets or assigns a port for the current project.
