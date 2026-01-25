@@ -12,10 +12,10 @@ A lightweight, automated port management system for your personal projects.
 1. **Authenticated gh CLI**: Ensure you have `gh` installed and authenticated on your machine.
 2. **Import Library**:
    ```javascript
-   const { getPort } = require('./lib/gith-port-manager/src');
+   const { registerPort } = require('./lib/port-manager');
    
    async function start() {
-     const port = await getPort();
+     const port = await registerPort();
      app.listen(port, () => console.log(`Running on ${port}`));
    }
    ```

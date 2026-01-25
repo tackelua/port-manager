@@ -5,10 +5,10 @@ const path = require('path');
 const { GIST_ID, PORT_RANGE } = require('./constants');
 
 /**
- * Gets or assigns a port for the current project.
+ * Registers or returns a port for the current project.
  * @param {string} projectName - Defaults to the name in package.json
  */
-async function getPort(projectName) {
+async function registerPort(projectName) {
     if (!projectName) {
         try {
             const packageJsonPath = path.join(process.cwd(), 'package.json');
@@ -60,7 +60,9 @@ async function fetchGistData() {
 
 async function updateGistData(data) {
     try {
-        const tmpFile = path.join(process.env.HOME, 'port-manager', 'ports.tmp.json');
+        const tmpDir = path.join(process.env.HOME, '.port-manager');
+        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
+        const tmpFile = path.join(tmpDir, 'ports.tmp.json');
         fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2));
         execSync(`gh gist edit ${GIST_ID} -f ports.json ${tmpFile}`);
         fs.unlinkSync(tmpFile);
@@ -78,4 +80,4 @@ function findNextAvailablePort(existingPorts) {
     throw new Error('No more ports available in range 4000-4999');
 }
 
-module.exports = { getPort };
+module.exports = { registerPort };
