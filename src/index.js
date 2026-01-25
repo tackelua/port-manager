@@ -55,8 +55,8 @@ function getTunnelUrl(port) {
     try {
         const configPath = path.join(process.env.HOME, 'cloudflare-githsoft', 'tunnel', 'config.yml');
         const content = fs.readFileSync(configPath, 'utf8');
-        // Simple regex to find hostname associated with the port
-        const regex = new RegExp(`hostname:\\s+([^\\s]+).*?\\n.*?localhost:${port}`, 's');
+        // Match hostname and its service port in the same ingress rule block
+        const regex = new RegExp(`hostname:\\s+([^\\s]+)\\s+service:\\s+http://localhost:${port}`, 'i');
         const match = content.match(regex);
         return match ? match[1] : null;
     } catch (e) {
