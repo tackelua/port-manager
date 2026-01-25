@@ -142,6 +142,23 @@ button:hover {
   color: var(--text-secondary);
 }
 
+.tunnel-link {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.tunnel-link a {
+  color: #aff5b4;
+  text-decoration: none;
+  background: #aff5b41a;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.tunnel-link a:hover {
+  background: #aff5b433;
+}
+
 .card-footer {
   margin-top: auto;
   padding-top: 1rem;

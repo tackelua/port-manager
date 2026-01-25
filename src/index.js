@@ -25,19 +25,43 @@ async function registerPort(projectName) {
 
     if (!projectEntry) {
         const assignedPort = findNextAvailablePort(data.ports);
+        const tunnelUrl = getTunnelUrl(assignedPort);
         projectEntry = {
             name: projectName,
             port: assignedPort,
-            github: githubUrl
+            github: githubUrl,
+            tunnel: tunnelUrl
         };
         data.ports.push(projectEntry);
         await updateGistData(data);
-    } else if (projectEntry.github !== githubUrl) {
-        projectEntry.github = githubUrl;
-        await updateGistData(data);
+    } else {
+        const tunnelUrl = getTunnelUrl(projectEntry.port);
+        let updated = false;
+        if (projectEntry.github !== githubUrl) {
+            projectEntry.github = githubUrl;
+            updated = true;
+        }
+        if (projectEntry.tunnel !== tunnelUrl) {
+            projectEntry.tunnel = tunnelUrl;
+            updated = true;
+        }
+        if (updated) await updateGistData(data);
     }
 
     return projectEntry.port;
+}
+
+function getTunnelUrl(port) {
+    try {
+        const configPath = path.join(process.env.HOME, 'cloudflare-githsoft', 'tunnel', 'config.yml');
+        const content = fs.readFileSync(configPath, 'utf8');
+        // Simple regex to find hostname associated with the port
+        const regex = new RegExp(`hostname:\\s+([^\\s]+).*?\\n.*?localhost:${port}`, 's');
+        const match = content.match(regex);
+        return match ? match[1] : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 function getGithubUrl() {
