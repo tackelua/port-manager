@@ -36,6 +36,10 @@ function renderProjects(data) {
         <div class="github-link">
           ${p.github && p.github !== 'Local Only' ? `<a href="${p.github}" target="_blank">View on GitHub</a>` : '<span>Local Only</span>'}
         </div>
+        ${p.tunnel ? `
+        <div class="tunnel-link">
+          <a href="https://${p.tunnel}" target="_blank">🔗 ${p.tunnel}</a>
+        </div>` : ''}
       </div>
       <div class="card-footer">
         <button class="ping-btn" onclick="pingProject('${p.port}')">Ping</button>
