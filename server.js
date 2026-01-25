@@ -3,8 +3,11 @@ const path = require('path');
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-const { GIST_ID, DASHBOARD_PORT } = require('./src/constants');
-const PORT = DASHBOARD_PORT;
+const { registerPort } = require('./src');
+const { GIST_ID } = require('./src/constants');
+
+// Initialized via registerPort inside start()
+let PORT;
 
 // Register static files
 fastify.register(require('@fastify/static'), {
@@ -25,6 +28,7 @@ fastify.get('/api/ports', async (request, reply) => {
 
 const start = async () => {
     try {
+        PORT = await registerPort('port-manager');
         await fastify.listen({ port: PORT, host: '0.0.0.0' });
         console.log(`Port Manager Dashboard running at http://localhost:${PORT}`);
     } catch (err) {
