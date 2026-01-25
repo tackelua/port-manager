@@ -1,4 +1,4 @@
-# Gith Port Manager 🚀
+# Port Manager 🚀
 
 A lightweight, automated port management system for your personal projects.
 
