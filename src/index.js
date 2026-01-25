@@ -20,6 +20,7 @@ async function getPort(projectName) {
         }
     }
 
+    const githubUrl = getGithubUrl();
     const data = await fetchGistData();
     let projectEntry = data.ports.find(p => p.name === projectName);
 
@@ -28,14 +29,24 @@ async function getPort(projectName) {
         projectEntry = {
             name: projectName,
             port: assignedPort,
-            path: process.cwd(),
-            createdAt: new Date().toISOString()
+            github: githubUrl
         };
         data.ports.push(projectEntry);
+        await updateGistData(data);
+    } else if (projectEntry.github !== githubUrl) {
+        projectEntry.github = githubUrl;
         await updateGistData(data);
     }
 
     return projectEntry.port;
+}
+
+function getGithubUrl() {
+    try {
+        return execSync('git remote get-url origin').toString().trim().replace(/\.git$/, '');
+    } catch (e) {
+        return 'Local Only';
+    }
 }
 
 async function fetchGistData() {
@@ -50,7 +61,7 @@ async function fetchGistData() {
 
 async function updateGistData(data) {
     try {
-        const tmpFile = path.join(__dirname, 'ports.tmp.json');
+        const tmpFile = path.join(process.env.HOME, 'port-manager', 'ports.tmp.json');
         fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2));
         execSync(`gh gist edit ${GIST_ID} -f ports.json ${tmpFile}`);
         fs.unlinkSync(tmpFile);
