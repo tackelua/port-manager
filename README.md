@@ -10,12 +10,17 @@ A lightweight, automated port management system for your personal projects.
 
 ## Setup
 1. **Authenticated gh CLI**: Ensure you have `gh` installed and authenticated on your machine.
-2. **Import Library**:
+2. **Import & Register Port**:
    ```javascript
    const { registerPort } = require('./lib/port-manager');
    
    async function start() {
-     const port = await registerPort();
+     // Tự động lấy tên từ package.json
+     const port = await registerPort(); 
+     
+     // Hoặc truyền tên cụ thể
+     // const port = await registerPort('my-custom-name');
+     
      app.listen(port, () => console.log(`Running on ${port}`));
    }
    ```
