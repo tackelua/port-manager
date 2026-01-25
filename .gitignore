@@ -1,0 +1,7 @@
+node_modules/
+ports.json
+ports.tmp.json
+.env
+package-lock.json
+*.log
+.DS_Store
