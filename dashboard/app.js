@@ -48,8 +48,9 @@ function renderProjects(data) {
         <span class="port-badge">${p.port}</span>
       </div>
       <div class="card-body">
-        <p class="path">${p.path}</p>
-        <p class="date">Created: ${new Date(p.createdAt).toLocaleDateString()}</p>
+        <div class="github-link">
+          ${p.github && p.github !== 'Local Only' ? `<a href="${p.github}" target="_blank">View on GitHub</a>` : '<span>Local Only</span>'}
+        </div>
       </div>
       <div class="card-footer">
         <button class="ping-btn" onclick="pingProject('${p.port}')">Ping</button>
