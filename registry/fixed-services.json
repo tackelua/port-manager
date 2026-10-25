@@ -1,0 +1,71 @@
+{
+  "$schema": "https://githsoft.com/schemas/fixed-services.v2.json",
+  "version": "2.0.0",
+  "services": {
+    "syncthing-web": {
+      "port": 8384,
+      "scope": "machine-local",
+      "category": "sync",
+      "description": "Syncthing Web Management UI"
+    },
+    "syncthing-sync": {
+      "port": 22000,
+      "scope": "machine-local",
+      "category": "sync",
+      "description": "Syncthing Protocol Sync Port"
+    },
+    "postgresql": {
+      "port": 5432,
+      "scope": "machine-local",
+      "category": "database",
+      "description": "Local PostgreSQL Server"
+    },
+    "redis": {
+      "port": 6379,
+      "scope": "machine-local",
+      "category": "cache",
+      "description": "Local Redis Cache"
+    },
+    "ollama": {
+      "port": 11434,
+      "scope": "machine-local",
+      "category": "ai",
+      "description": "Ollama Local LLM Runner"
+    },
+    "dsh": {
+      "port": 3090,
+      "scope": "canonical-global",
+      "category": "ai",
+      "tunnel": "dsh.githsoft.com",
+      "description": "DSH AI Agent Management"
+    },
+    "n8n": {
+      "port": 5678,
+      "scope": "canonical-global",
+      "category": "automation",
+      "tunnel": "n8n.githsoft.com",
+      "description": "n8n Automation Engine"
+    },
+    "openclaw": {
+      "port": 18789,
+      "scope": "canonical-global",
+      "category": "gateway",
+      "tunnel": "openclaw.githsoft.com",
+      "description": "OpenClaw Gateway Daemon"
+    },
+    "omniroute": {
+      "port": 20128,
+      "scope": "canonical-global",
+      "category": "gateway",
+      "tunnel": "omniroute.githsoft.com",
+      "description": "OmniRoute Local Model Gateway"
+    },
+    "bn": {
+      "port": 3000,
+      "scope": "canonical-global",
+      "category": "web",
+      "tunnel": "bn.githsoft.com",
+      "description": "BN Web Interface"
+    }
+  }
+}

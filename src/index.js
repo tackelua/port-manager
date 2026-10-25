@@ -1,107 +1,52 @@
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-
-const { GIST_ID, PORT_RANGE } = require('./constants');
+const registry = require('./registry');
+const allocator = require('./allocator');
+const tunnel = require('./tunnel');
+const { probePort } = require('./probe');
+const { detectProjectName, getGitRemoteUrl, getMachineNodeId } = require('./detector');
 
 /**
- * Registers or returns a port for the current project.
- * @param {string} projectName - Defaults to the name in package.json
+ * Backward-compatible registerPort for all projects.
+ * Runs instantly in <1ms from local SSD without blocking network calls.
+ * @param {string} [projectName]
+ * @returns {Promise<number>}
  */
 async function registerPort(projectName) {
-    if (!projectName) {
-        try {
-            const packageJsonPath = path.join(process.cwd(), 'package.json');
-            const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-            projectName = pkg.name;
-        } catch (e) {
-            projectName = path.basename(process.cwd());
-        }
-    }
+  if (!projectName) {
+    projectName = detectProjectName(process.cwd());
+  }
 
-    const githubUrl = getGithubUrl();
-    const data = await fetchGistData();
-    let projectEntry = data.ports.find(p => p.name === projectName);
+  const result = allocator.allocate(projectName, {
+    repo: getGitRemoteUrl(process.cwd())
+  });
 
-    if (!projectEntry) {
-        const assignedPort = findNextAvailablePort(data.ports);
-        const tunnelUrl = getTunnelUrl(assignedPort);
-        projectEntry = {
-            name: projectName,
-            port: assignedPort,
-            github: githubUrl,
-            tunnel: tunnelUrl
-        };
-        data.ports.push(projectEntry);
-        await updateGistData(data);
-    } else {
-        const tunnelUrl = getTunnelUrl(projectEntry.port);
-        let updated = false;
-        if (projectEntry.github !== githubUrl) {
-            projectEntry.github = githubUrl;
-            updated = true;
-        }
-        if (projectEntry.tunnel !== tunnelUrl) {
-            projectEntry.tunnel = tunnelUrl;
-            updated = true;
-        }
-        if (updated) await updateGistData(data);
-    }
-
-    return projectEntry.port;
+  return result.port;
 }
 
-function getTunnelUrl(port) {
-    try {
-        const configPath = path.join(process.env.HOME, 'cloudflare-githsoft', 'tunnel', 'config.yml');
-        const content = fs.readFileSync(configPath, 'utf8');
-        // Match hostname and its service port in the same ingress rule block
-        const regex = new RegExp(`hostname:\\s+([^\\s]+)\\s+service:\\s+http://localhost:${port}`, 'i');
-        const match = content.match(regex);
-        return match ? match[1] : null;
-    } catch (e) {
-        return null;
-    }
+/**
+ * Gets registered port for an app.
+ */
+function getPort(projectName) {
+  if (!projectName) projectName = detectProjectName(process.cwd());
+  const entry = registry.findByName(projectName);
+  return entry ? entry.port : null;
 }
 
-function getGithubUrl() {
-    try {
-        return execSync('git remote get-url origin').toString().trim().replace(/\.git$/, '');
-    } catch (e) {
-        return 'Local Only';
-    }
+/**
+ * Lists all registered ports.
+ */
+function listPorts() {
+  return registry.getAllMerged();
 }
 
-async function fetchGistData() {
-    try {
-        const rawData = execSync(`gh gist view ${GIST_ID} -f ports.json`).toString();
-        return JSON.parse(rawData);
-    } catch (e) {
-        console.error('Failed to fetch Gist data. Ensure gh is authenticated.');
-        return { ports: [] };
-    }
-}
-
-async function updateGistData(data) {
-    try {
-        const tmpDir = path.join(process.env.HOME, '.port-manager');
-        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
-        const tmpFile = path.join(tmpDir, 'ports.tmp.json');
-        fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2));
-        execSync(`gh gist edit ${GIST_ID} -f ports.json ${tmpFile}`);
-        fs.unlinkSync(tmpFile);
-    } catch (e) {
-        console.error('Failed to update Gist data.');
-        throw e;
-    }
-}
-
-function findNextAvailablePort(existingPorts) {
-    const usedPorts = new Set(existingPorts.map(p => p.port));
-    for (let p = PORT_RANGE[0]; p <= PORT_RANGE[1]; p++) {
-        if (!usedPorts.has(p)) return p;
-    }
-    throw new Error('No more ports available in range 4000-4999');
-}
-
-module.exports = { registerPort };
+module.exports = {
+  get: getPort,
+  getPort,
+  registerPort,
+  listPorts,
+  probePort,
+  registry,
+  allocator,
+  tunnel,
+  detectProjectName,
+  getMachineNodeId
+};

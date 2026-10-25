@@ -1,40 +1,54 @@
-const fastify = require('fastify')({ logger: true });
+const fastify = require('fastify')({ logger: false });
 const path = require('path');
-const { execSync } = require('child_process');
-const fs = require('fs');
 
-const { registerPort } = require('./src');
-const { GIST_ID } = require('./src/constants');
+const { registerPort, registry, probePort, getMachineNodeId } = require('./src');
 
-// Initialized via registerPort inside start()
 let PORT;
 
 // Register static files
 fastify.register(require('@fastify/static'), {
-    root: path.join(__dirname, 'dashboard'),
-    prefix: '/',
+  root: path.join(__dirname, 'dashboard'),
+  prefix: '/'
 });
 
-// API to fetch ports from Gist
+// API to fetch all ports with real-time liveness status
 fastify.get('/api/ports', async (request, reply) => {
-    try {
-        const rawData = execSync(`gh gist view ${GIST_ID} -f ports.json`).toString();
-        return JSON.parse(rawData);
-    } catch (e) {
-        fastify.log.error(e);
-        reply.status(500).send({ error: 'Failed to fetch Gist data' });
-    }
+  try {
+    const all = registry.getAllMerged();
+    const ports = all.map(item => {
+      const probe = probePort(item.port);
+      return {
+        name: item.name,
+        port: item.port,
+        github: item.repo || 'Local Only',
+        tunnel: item.tunnel || null,
+        scope: item.scope,
+        type: item.type,
+        status: probe.isListening ? 'online' : 'offline',
+        pid: probe.pid || null,
+        command: probe.command || null
+      };
+    });
+
+    return {
+      version: '2.0.0',
+      node_id: getMachineNodeId(),
+      ports
+    };
+  } catch (e) {
+    reply.status(500).send({ error: e.message });
+  }
 });
 
 const start = async () => {
-    try {
-        PORT = await registerPort('port-manager');
-        await fastify.listen({ port: PORT, host: '0.0.0.0' });
-        console.log(`Port Manager Dashboard running at http://localhost:${PORT}`);
-    } catch (err) {
-        fastify.log.error(err);
-        process.exit(1);
-    }
+  try {
+    PORT = await registerPort('port-manager');
+    await fastify.listen({ port: PORT, host: '0.0.0.0' });
+    console.log(`Port Manager Dashboard running at http://localhost:${PORT}`);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 };
 
 start();

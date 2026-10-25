@@ -1,0 +1,6 @@
+{
+  "node_id": "node-macmini",
+  "hostname": "Giths-Mac-mini-10.local",
+  "port_range": [4100, 4199],
+  "allocated": {}
+}

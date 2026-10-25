@@ -1,1 +1,77 @@
-{"ports": []}
+{
+  "version": "2.0.0",
+  "ports": [
+    {
+      "name": "port-manager",
+      "port": 4000,
+      "github": "https://github.com/tackelua/port-manager",
+      "tunnel": "ports.githsoft.com"
+    },
+    {
+      "name": "word-frequency-analyzer",
+      "port": 4001,
+      "github": "https://github.com/tackelua/word-frequency-app",
+      "tunnel": "words.githsoft.com"
+    },
+    {
+      "name": "llm-web-bridge-api",
+      "port": 4002,
+      "github": "https://github.com/tackelua/llm-web-bridge-api",
+      "tunnel": "api.githsoft.com"
+    },
+    {
+      "name": "upscaler",
+      "port": 4003,
+      "github": "Local Only",
+      "tunnel": "upscaler.githsoft.com"
+    },
+    {
+      "name": "youtube-mindmap-generator",
+      "port": 4004,
+      "github": "https://github.com/tackelua/youtube-mindmap",
+      "tunnel": "youtubemmap.com"
+    },
+    {
+      "name": "tv-remote-dashboard",
+      "port": 4005,
+      "github": "https://github.com/tackelua/tv-remote-dashboard",
+      "tunnel": "tv.githsoft.com"
+    },
+    {
+      "name": "bn",
+      "port": 3000,
+      "github": "Local Only",
+      "tunnel": "bn.githsoft.com"
+    },
+    {
+      "name": "dsh",
+      "port": 3090,
+      "github": "Local Only",
+      "tunnel": "dsh.githsoft.com"
+    },
+    {
+      "name": "n8n",
+      "port": 5678,
+      "github": "Local Only",
+      "tunnel": "n8n.githsoft.com"
+    },
+    {
+      "name": "syncthing-web",
+      "port": 8384,
+      "github": "Local Only",
+      "tunnel": null
+    },
+    {
+      "name": "openclaw",
+      "port": 18789,
+      "github": "Local Only",
+      "tunnel": "openclaw.githsoft.com"
+    },
+    {
+      "name": "omniroute",
+      "port": 20128,
+      "github": "Local Only",
+      "tunnel": "omniroute.githsoft.com"
+    }
+  ]
+}

@@ -1,32 +1,81 @@
-# Port Manager 🚀
+# Githsoft Port Manager (`portctl`) 🚀
 
-A lightweight, automated port management system for your personal projects.
+A lightweight, local-first port management and automated Cloudflare Tunnel ingress system designed for multi-machine developer workflows.
 
-## Features
-- **Auto-assignment**: Automatically assigns a port in the 4000-4999 range.
-- **Gist Sync**: Stores port data in a secret GitHub Gist for cross-project consistency.
-- **Dashboard**: A beautiful dark-mode dashboard to view and ping your projects.
-- **Submodule Friendly**: Designed to be used as a git submodule in your projects.
+---
 
-## Setup
-1. **Authenticated gh CLI**: Ensure you have `gh` installed and authenticated on your machine.
-2. **Import & Register Port**:
-   ```javascript
-   const { registerPort } = require('./lib/port-manager');
-   
-   async function start() {
-     // Tự động lấy tên từ package.json
-     const port = await registerPort(); 
-     
-     // Hoặc truyền tên cụ thể
-     // const port = await registerPort('my-custom-name');
-     
-     app.listen(port, () => console.log(`Running on ${port}`));
-   }
-   ```
+## 🌟 Key Highlights
 
-## Dashboard
-The dashboard is located in the `dashboard/` folder. You can open `index.html` directly or deploy it to GitHub Pages. To view data, you will need a GitHub Personal Access Token (PAT) with `gist` permissions.
+- **Dual-Scope Taxonomy**:
+  - `canonical-global` (4000-4099): Dedicated SSOT ports for core apps, consistent across Mac Mini, MacBook, and remote environments.
+  - `machine-local` (5000+, 3rd-party infra): PostgreSQL (5432), Redis (6379), Syncthing (8384), Ollama (11434).
+- **Partitioned Storage (Zero Sync Conflict)**:
+  - Partitioned per-node files (`registry/machines/node-<machine>.json`) eliminate Git/Syncthing merge conflicts when developing offline across devices.
+- **Zero-Daemon Overhead**:
+  - Direct kernel socket binding with sub-millisecond local SSD queries. No background proxy hogging memory or port 80/443.
+- **Automated Cloudflare Ingress**:
+  - One-command public exposure via Cloudflare Tunnel (`portctl expose <app>`) with automatic DNS CNAME registration and zero-downtime daemon reload.
+- **Hardened Security Guardrail**:
+  - Automatically blocks dangerous database and service ports from accidental public exposure.
 
-## Data Structure
-The data is stored in Gist `cf2bff0d9e33c2f9112c1e62fe18b5ee` in a file named `ports.json`.
+---
+
+## 💻 CLI Usage (`portctl`)
+
+```bash
+# List all registered ports and live PID status
+portctl list
+
+# Inspect TCP socket occupancy
+portctl check 4001
+
+# Retrieve assigned port for an application
+portctl get word-frequency-analyzer
+
+# Assign or allocate a port
+portctl assign my-new-app
+
+# Expose local port via Cloudflare Tunnel
+portctl expose word-frequency-analyzer --domain words.githsoft.com
+
+# Sync or write .env file with assigned PORT
+portctl env --write
+
+# Run any dev server with injected $PORT
+portctl run -- npm run dev
+```
+
+---
+
+## 🔌 Integration Patterns for Applications
+
+### Pattern 1: 12-Factor Standard (Zero Boilerplate - Recommended)
+Keep application code 100% clean and free of proprietary tooling:
+```javascript
+// server.js
+const PORT = process.env.PORT || 4001;
+app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
+```
+- During local development: Run with `portctl run -- npm run dev` or run `portctl env --write` once to populate `.env.local`.
+- In PM2 or production: Managed via environment configuration.
+
+### Pattern 2: Programmatic SDK
+```javascript
+const { getPort } = require('./lib/port-manager');
+
+async function start() {
+  const port = process.env.PORT || getPort() || 4001;
+  app.listen(port);
+}
+```
+
+---
+
+## 🗺️ Roadmap & Backlog
+
+See [ROADMAP.md](./ROADMAP.md) for planned features:
+- `portctl kill` & `portctl doctor` (Zombie process cleaner)
+- Model Context Protocol (MCP) Server for AI Coding Agents
+- Zero-daemon `*.localhost` forwarder proxy
+- Git worktree-aware port offsetting
+- Interactive terminal TUI (`portctl top`)

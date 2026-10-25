@@ -1,0 +1,42 @@
+{
+  "$schema": "https://githsoft.com/schemas/canonical-apps.v2.json",
+  "version": "2.0.0",
+  "apps": {
+    "port-manager": {
+      "port": 4000,
+      "tunnel": "ports.githsoft.com",
+      "repo": "https://github.com/tackelua/port-manager",
+      "description": "Port Manager & Ecosystem Dashboard"
+    },
+    "word-frequency-analyzer": {
+      "port": 4001,
+      "tunnel": "words.githsoft.com",
+      "aliases": ["chart.githsoft.com"],
+      "repo": "https://github.com/tackelua/word-frequency-app",
+      "description": "Word Frequency Analyzer & Charts"
+    },
+    "llm-web-bridge-api": {
+      "port": 4002,
+      "tunnel": "api.githsoft.com",
+      "repo": "https://github.com/tackelua/llm-web-bridge-api",
+      "description": "LLM Web Bridge API"
+    },
+    "upscaler": {
+      "port": 4003,
+      "tunnel": "upscaler.githsoft.com",
+      "description": "Image Lab AI Upscaler Service"
+    },
+    "youtube-mindmap-generator": {
+      "port": 4004,
+      "tunnel": "youtubemmap.com",
+      "aliases": ["mindmap.githsoft.com", "www.youtubemmap.com"],
+      "repo": "https://github.com/tackelua/youtube-mindmap",
+      "description": "YouTube Mindmap Generator"
+    },
+    "tv-remote-dashboard": {
+      "port": 4005,
+      "tunnel": "tv.githsoft.com",
+      "description": "Coocaa TV Controller & Usage Dashboard"
+    }
+  }
+}
