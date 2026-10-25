@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const yaml = require('yaml');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const {
   TUNNEL_CONFIG_PATH,
   SYSTEM_TUNNEL_CONFIG_PATH,
@@ -9,12 +10,20 @@ const {
 } = require('./constants');
 const registry = require('./registry');
 
+// RFC 1123 compliant domain regex
+const DOMAIN_REGEX = /^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})+$/;
+
 class TunnelManager {
   /**
    * Exposes an app to a Cloudflare subdomain.
    */
   expose(appName, domain, options = {}) {
-    // 1. Get or allocate port
+    // 1. Validate domain format (Security check)
+    if (!domain || !DOMAIN_REGEX.test(domain)) {
+      throw new Error(`Domain name '${domain}' không hợp lệ theo chuẩn RFC 1123.`);
+    }
+
+    // 2. Get or allocate port
     const entry = registry.findByName(appName);
     if (!entry) {
       throw new Error(`Ứng dụng '${appName}' chưa được đăng ký trong Port Registry. Vui lòng cấp port trước!`);
@@ -22,7 +31,7 @@ class TunnelManager {
 
     const port = entry.port;
 
-    // 2. Security Guardrail: Blacklist check
+    // 3. Security Guardrail: Blacklist check
     if (SENSITIVE_BLACKLIST_PORTS.has(port) && !options.force) {
       throw new Error(
         `[SECURITY GUARDRAIL] Port ${port} nằm trong danh sách cổng nhạy cảm / database / debug cấm expose trực tiếp ra ngoài Internet! Dùng --force nếu bạn biết chính xác mình đang làm gì.`
@@ -33,12 +42,14 @@ class TunnelManager {
       throw new Error(`Không tìm thấy file cấu hình Cloudflare Tunnel tại: ${TUNNEL_CONFIG_PATH}`);
     }
 
-    // 3. Parse YAML
+    // 4. Parse YAML
     const rawYaml = fs.readFileSync(TUNNEL_CONFIG_PATH, 'utf8');
     const config = yaml.parse(rawYaml);
     if (!config.ingress || !Array.isArray(config.ingress)) {
       config.ingress = [];
     }
+
+    const tunnelId = config.tunnel || 'default';
 
     // Filter out existing rule for this hostname
     config.ingress = config.ingress.filter(rule => rule.hostname !== domain);
@@ -58,29 +69,34 @@ class TunnelManager {
     }
 
     const updatedYaml = yaml.stringify(config);
-    const tmpFile = `/tmp/cloudflared-validate-${Date.now()}.yml`;
-    fs.writeFileSync(tmpFile, updatedYaml, 'utf8');
+
+    // 5. Secure temporary file creation (CWE-377 mitigation)
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'portctl-tunnel-'));
+    const tmpFile = path.join(tmpDir, 'validate.yml');
+    fs.writeFileSync(tmpFile, updatedYaml, { encoding: 'utf8', mode: 0o600 });
 
     try {
-      // 4. Validate ingress using cloudflared CLI
-      execSync(`cloudflared tunnel --config "${tmpFile}" ingress validate`, { stdio: 'pipe' });
+      // 6. Validate ingress using cloudflared CLI with safe execFileSync
+      execFileSync('cloudflared', ['tunnel', '--config', tmpFile, 'ingress', 'validate'], { stdio: 'pipe' });
 
-      // 5. Write to local repo config & copy to /etc/cloudflared/config.yml
+      // 7. Write to local repo config & copy to /etc/cloudflared/config.yml
       fs.writeFileSync(TUNNEL_CONFIG_PATH, updatedYaml, 'utf8');
-      execSync(`sudo cp "${TUNNEL_CONFIG_PATH}" "${SYSTEM_TUNNEL_CONFIG_PATH}"`, { stdio: 'pipe' });
-      fs.unlinkSync(tmpFile);
+      execFileSync('sudo', ['cp', TUNNEL_CONFIG_PATH, SYSTEM_TUNNEL_CONFIG_PATH], { stdio: 'pipe' });
 
-      // 6. Create DNS CNAME on Cloudflare edge
+      // Clean up tmpDir
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+
+      // 8. Create DNS CNAME on Cloudflare edge using dynamic tunnelId
       try {
-        execSync(`cloudflared tunnel route dns githsoft-tunnels-id "${domain}"`, { stdio: 'pipe' });
+        execFileSync('cloudflared', ['tunnel', 'route', 'dns', tunnelId, domain], { stdio: 'pipe' });
       } catch (dnsErr) {
         // Ignored if already exists
       }
 
-      // 7. Safe reload launchd daemon
-      execSync('sudo launchctl kickstart -k system/com.cloudflare.cloudflared', { stdio: 'pipe' });
+      // 9. Safe reload launchd daemon
+      execFileSync('sudo', ['launchctl', 'kickstart', '-k', 'system/com.cloudflare.cloudflared'], { stdio: 'pipe' });
 
-      // 8. Update registry metadata
+      // 10. Update registry metadata
       const canonicalData = registry.loadCanonicalApps();
       if (canonicalData.apps && canonicalData.apps[appName]) {
         canonicalData.apps[appName].tunnel = domain;
@@ -94,7 +110,9 @@ class TunnelManager {
         url: `https://${domain}`
       };
     } catch (err) {
-      if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
+      if (fs.existsSync(tmpDir)) {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
       throw new Error(`Cấu hình Cloudflare Ingress thất bại: ${err.message}`);
     }
   }

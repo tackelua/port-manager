@@ -252,15 +252,22 @@ program
     const port = entry.port;
     console.log(`⚡ [portctl run] Injecting PORT=\x1b[32m${port}\x1b[0m for '\x1b[36m${appName}\x1b[0m'`);
 
-    const command = cmdParts.join(' ');
-    const child = spawnSync(command, {
-      shell: true,
+    const [executable, ...args] = cmdParts;
+    // On Windows, running batch files like npm/npx requires shell: true; on Unix, shell: false eliminates command injection
+    const useShell = process.platform === 'win32';
+    const child = spawnSync(executable, args, {
+      shell: useShell,
       stdio: 'inherit',
       env: {
         ...process.env,
         PORT: String(port)
       }
     });
+
+    if (child.error) {
+      console.error(`\x1b[31mError executing '${executable}':\x1b[0m`, child.error.message);
+      process.exit(1);
+    }
 
     process.exit(child.status !== null ? child.status : 0);
   });

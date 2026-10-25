@@ -3,6 +3,21 @@ const path = require('path');
 const { REGISTRY_DIR, PORTS_JSON_PATH } = require('./constants');
 const { getMachineNodeId } = require('./detector');
 
+/**
+ * Safely writes JSON data using atomic file rename and strict 0600 permissions.
+ * Protects against file corruption on unexpected crashes or power failure.
+ */
+function atomicWriteJsonSync(filePath, data) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  const tempPath = path.join(dir, `.${path.basename(filePath)}.tmp-${Date.now()}-${process.pid}`);
+  const content = JSON.stringify(data, null, 2);
+  fs.writeFileSync(tempPath, content, { encoding: 'utf8', mode: 0o600 });
+  fs.renameSync(tempPath, filePath);
+}
+
 class PortRegistry {
   constructor() {
     this.ensureDirs();
@@ -64,13 +79,13 @@ class PortRegistry {
 
   saveFixedServices(data) {
     const filePath = path.join(REGISTRY_DIR, 'fixed-services.json');
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    atomicWriteJsonSync(filePath, data);
     this.syncPortsJson();
   }
 
   saveCanonicalApps(data) {
     const filePath = path.join(REGISTRY_DIR, 'canonical-apps.json');
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    atomicWriteJsonSync(filePath, data);
     this.syncPortsJson();
   }
 
@@ -87,7 +102,7 @@ class PortRegistry {
       ...portData,
       updated_at: new Date().toISOString()
     };
-    fs.writeFileSync(filePath, JSON.stringify(machineData, null, 2), 'utf8');
+    atomicWriteJsonSync(filePath, machineData);
     this.syncPortsJson();
   }
 
@@ -172,7 +187,7 @@ class PortRegistry {
           tunnel: m.tunnel || null
         }))
       };
-      fs.writeFileSync(PORTS_JSON_PATH, JSON.stringify(legacyData, null, 2), 'utf8');
+      atomicWriteJsonSync(PORTS_JSON_PATH, legacyData);
     } catch (e) {
       console.error('Failed to sync ports.json:', e.message);
     }
