@@ -19,12 +19,15 @@
     "developer-tooling"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@fastify/static": "^9.0.0",
     "axios": "^1.13.3",
-    "commander": "^15.0.0",
+    "commander": "^14.0.3",
     "fastify": "^5.7.1",
     "yaml": "^2.9.1"
   }
